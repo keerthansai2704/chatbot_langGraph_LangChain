@@ -2,7 +2,7 @@ from langchain.chat_models import init_chat_model
 from langchain_core.tools import tool
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
-from langchain_core.messages import ToolMessage
+from langchain_core.messages import ToolMessage , HumanMessage
 from langgraph.prebuilt import ToolNode
 from langgraph.graph import StateGraph,START,END
 from typing_extensions import TypedDict ,Annotated
