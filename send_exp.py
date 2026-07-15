@@ -9,17 +9,17 @@ def add_result(old, new):
 class send_exp(TypedDict):
     maths:int
     eng:int
-    percent:float
     result:Annotated[list,add_result]
+    average:float
 
 def math_node(state:send_exp):
     return{
-        "result":["maths"]
+        "result":[state["maths"]]
     }
 
 def eng_node(state:send_exp):
     return{
-        "result":["eng"]
+        "result":[state["eng"]]
     }
 def distributor(state):
     print("distrubotr")
@@ -29,15 +29,18 @@ def distributor_route(state:send_exp):
     return[
 
         Send("maths",state),
-        Send("eng",state)
+        Send("eng",state),
+        Send('average',state)
         
     ]
 
 def calculate_node(state:send_exp):
 
     result=state["result"]
+    print(result)
 
     average= sum(result)/len(result)
+    print(average)
 
     return{
         "average":average
@@ -66,9 +69,10 @@ graph =builder.compile()
 
 response=graph.invoke(
     {
-        "maths":50,
-        "eng":42,
-        "result":[]
+        "maths":98,
+        "eng":62,
+        "result":[],
+        "average":"average"
 
     }
 )
