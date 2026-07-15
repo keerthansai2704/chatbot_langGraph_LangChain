@@ -1,5 +1,5 @@
 from typing_extensions import TypedDict
-from langgraph.types import interrupt
+from langgraph.types import interrupt ,Command
 from langgraph.checkpoint.memory import MemorySaver
 from langchain.chat_models import init_chat_model
 from dotenv import load_dotenv
@@ -15,9 +15,10 @@ class ApproveState(TypedDict):
 
 def approval_node(state:ApproveState):
     
-    interrupt(
-        f"approved login for {state['username']}"
+    approved=interrupt(
+        f"approved login for {state['username']}?"
     )
+    print(approved)
     print("login approved")
     return {
 
@@ -40,20 +41,28 @@ config = {
         "thread_id":"thread_1"
     }
 }
-for event in graph.stream(
+# for event in graph.stream(
+#     {
+#         "username":"username"
+#     },
+#     config=config,
+#     stream_mode="updates"
+# ):
+#     print(event)
+
+response = graph.invoke(
     {
-        "username":"username"
+     "username":"keerthan sai "   
     },
-    config=config,
-    stream_mode="updates"
-):
-    print(event)
+    config=config
+)
+print(response)
     
 
-
-
-
-
-
-
-
+response = graph.invoke(
+    Command(
+        resume="NO"
+    ),
+    config=config
+)
+print(response)
