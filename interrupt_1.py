@@ -16,7 +16,7 @@ class ApproveState(TypedDict):
 def approval_node(state:ApproveState):
     
     approved=interrupt(
-        f"approved login for {state['username']}?"
+        f"Approved login for {state['username']}?"
     )
     if approved == "YES":
 
