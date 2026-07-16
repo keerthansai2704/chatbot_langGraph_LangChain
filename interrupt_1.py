@@ -18,8 +18,12 @@ def approval_node(state:ApproveState):
     approved=interrupt(
         f"approved login for {state['username']}?"
     )
-    print(approved)
-    print("login approved")
+    if approved == "YES":
+
+        print(" login approved")
+    else:
+        print("login rejcted ")
+    
     return {
 
     }
@@ -56,13 +60,13 @@ response = graph.invoke(
     },
     config=config
 )
-print(response)
+# print(response)
     
 
 response = graph.invoke(
     Command(
-        resume="NO"
+        resume="YES"
     ),
     config=config
 )
-print(response)
+# print(response)
