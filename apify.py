@@ -14,6 +14,9 @@ import os
 import json
 import time
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 APIFY_TOKEN = os.environ.get("APIFY_API_TOKEN")
 ACTOR_ID = "cheap_scraper~linkedin-job-scraper"  # Apify uses ~ in REST URLs
