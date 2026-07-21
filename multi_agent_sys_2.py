@@ -1,6 +1,7 @@
 from typing_extensions import TypedDict, Annotated
 from langgraph.graph import StateGraph,START,END
 from langchain.chat_models import init_chat_model
+from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 from langgraph.graph.message import add_messages
 from langgraph.types import Command
@@ -12,16 +13,13 @@ load_dotenv()
 
 class MainGraph(TypedDict):
     messages :Annotated[list,add_messages]
-    num:int
-
-
+    # num:int
 
 llm=init_chat_model("groq:llama-3.3-70b-versatile")
 
 class Router(TypedDict):
     next:Literal["calculator_agent","greeting_agent"]
 route_llm = llm.with_structured_output(Router)
-
 
 def supervisor_node(state:MainGraph):
     system_prompt="""
@@ -33,7 +31,7 @@ def supervisor_node(state:MainGraph):
     -greetings_agent
 
 """
-    response=llm.invoke(
+    response=route_llm.invoke(
         [
             {
                 "role":"system",
@@ -60,45 +58,84 @@ def multi(a:int,b:int)->int:
 #         "num":state["num"]+1
     # }
 
-# def greetng_agent(state:MainGraph):
-#     return{
+def greeting_node(state:MainGraph):
+   response=llm.invoke(state["messages"])
 
-    # }
+   return{
+       "messages":[response]
+   }
 
-llm_with_tool= llm.bind_tools([add,multi])
+llm_with_tools= llm.bind_tools([add,multi])
 
 def llm_node(state:MainGraph):
-    response = llm_with_tool.invoke(state["messages"])
+    response = llm_with_tools.invoke(state["messages"])
     return{
         "messages":[response]
     }
 
 def should_continue(state:MainGraph):
     last_message=state["messages"][-1]
-    if last_message.tool_calls:
-        return "tools"
+    if hasattr(last_message,"tool_calls") and last_message.tool_calls:
+        return "tool"
     return END
 
 tool_node= ToolNode([add,multi])
 
 
 calculator_builder=StateGraph(MainGraph)
-calculator_builder.add_node("llm",llm_node)
-calculator_builder.add_node('tool',tool_node)
+calculator_builder.add_node("llm",
+                            llm_node)
+calculator_builder.add_node('tool',
+                            tool_node)
 
-calculator_builder.add_edge(START,"llm")
+calculator_builder.add_edge(START,
+                            "llm")
 
 calculator_builder.add_conditional_edges(
     "llm",
     should_continue
 )
-calculator_builder.add_edge("tool","llm")
-calculator_builder.add_edge("tool",END)
+calculator_builder.add_edge("tool",
+                            "llm")
+
 
 
 calculator_agent=calculator_builder.compile()
 
-greetng_builder=StateGraph(MainGraph)
+greeting_builder=StateGraph(MainGraph)
 
-greeting_agent=greetng_builder.compile()
+greeting_builder.add_node("greeting",greeting_node)
+greeting_builder.add_edge(START,"greeting")
+greeting_builder.add_edge("greeting",END)
 
+
+greeting_agent=greeting_builder.compile()
+
+
+main_builder =StateGraph(MainGraph)
+
+main_builder.add_node("calculator_agent",
+                      calculator_agent
+)
+main_builder.add_node("greeting_agent",
+                      greeting_agent)
+
+main_builder.add_node("supervisor",
+                      supervisor_node)
+
+main_builder.add_edge(START,
+                      "supervisor")
+
+
+main_graph = main_builder.compile()
+
+res= main_graph.invoke(
+    {
+        "messages":[
+            HumanMessage(content="hello how you  ")
+        ]
+    }
+
+    
+)
+print(res["messages"][-1].content)
